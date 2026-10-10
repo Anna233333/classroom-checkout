@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f7f4ee">
+  <title>Classroom Checkout</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to the student roster</a>
+
+  <header class="app-header">
+    <div class="brand" aria-label="Classroom Checkout">
+      <span class="brand-mark" aria-hidden="true">↗</span>
+      <span><strong>Classroom</strong> Checkout</span>
+    </div>
+    <nav class="view-switcher" aria-label="Choose a view">
+      <button class="view-tab is-active" type="button" data-view="student" aria-pressed="true">Student view</button>
+      <button class="view-tab" type="button" data-view="teacher" aria-pressed="false">Teacher dashboard</button>
+    </nav>
+  </header>
+
+  <main id="main-content">
+    <section id="student-view" class="view-panel" aria-labelledby="student-heading">
+      <div class="student-hero">
+        <div>
+          <p class="eyebrow">Sign in/out Sheet</p>
+          <h1 id="student-heading">Where are you going?</h1>
+          <p>Tap your animal to check out or see your place in line.</p>
+        </div>
+        <div class="class-rule" aria-live="polite">
+          <span>Today’s buddy rule</span>
+          <strong id="student-rule-label">Optional buddy</strong>
+        </div>
+      </div>
+
+      <section class="bathroom-strip" aria-labelledby="bathroom-status-heading">
+        <div class="section-title compact-title">
+          <div>
+            <p class="eyebrow">Live status</p>
+            <h2 id="bathroom-status-heading">Bathroom passes</h2>
+          </div>
+          <span class="live-dot"><i aria-hidden="true"></i> Live</span>
+        </div>
+        <div id="bathroom-chips" class="bathroom-chips"></div>
+      </section>
+
+      <section class="roster-section" aria-labelledby="roster-heading">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Our class</p>
+            <h2 id="roster-heading">Tap your name</h2>
+          </div>
+          <p id="roster-summary" class="muted"></p>
+        </div>
+        <div id="student-roster" class="student-roster"></div>
+      </section>
+
+      <p id="selection-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+      <aside id="selection-tray" class="selection-tray" aria-labelledby="selection-tray-title" hidden>
+        <div id="selection-tray-content"></div>
+      </aside>
+    </section>
+
+    <section id="teacher-view" class="view-panel" aria-labelledby="teacher-heading" hidden>
+      <div class="teacher-hero">
+        <div>
+          <p class="eyebrow">Teacher dashboard</p>
+          <h1 id="teacher-heading">Classroom overview</h1>
+          <p>See named queues and manage the buddy rule for new requests.</p>
+        </div>
+        <fieldset class="buddy-control">
+          <legend>Buddy mode</legend>
+          <div class="segmented-control">
+            <button type="button" data-mode="OPTIONAL" class="is-selected">Optional buddy</button>
+            <button type="button" data-mode="REQUIRED">Buddy required</button>
+            <button type="button" data-mode="SOLO">Solo only</button>
+          </div>
+          <p id="buddy-mode-description">Students may go alone or choose one available buddy.</p>
+        </fieldset>
+      </div>
+
+      <div class="metrics" id="teacher-metrics"></div>
+
+      <section id="teacher-alerts" class="teacher-alerts" aria-labelledby="attention-heading" hidden>
+        <div class="card-heading">
+          <div>
+            <p class="eyebrow">Check-in reminders</p>
+            <h2 id="attention-heading">Students who may need attention</h2>
+          </div>
+          <span id="teacher-alert-count" class="attention-count">0</span>
+        </div>
+        <div id="teacher-alert-list" class="reminder-list"></div>
+      </section>
+
+      <div class="teacher-grid">
+        <section class="dashboard-card span-two" aria-labelledby="active-heading">
+          <div class="card-heading">
+            <div><p class="eyebrow">Right now</p><h2 id="active-heading">Students out</h2></div>
+            <span id="active-count" class="count-pill">0</span>
+          </div>
+          <div id="active-trips" class="dashboard-list"></div>
+        </section>
+
+        <section class="dashboard-card" aria-labelledby="queue-heading">
+          <div class="card-heading">
+            <div><p class="eyebrow">Up next</p><h2 id="queue-heading">Named queues</h2></div>
+          </div>
+          <div id="teacher-queues" class="dashboard-list"></div>
+        </section>
+
+        <section class="dashboard-card" aria-labelledby="history-heading">
+          <div class="card-heading">
+            <div><p class="eyebrow">Completed</p><h2 id="history-heading">Return history</h2></div>
+            <button id="clear-history" class="text-button" type="button">Clear</button>
+          </div>
+          <div id="trip-history" class="dashboard-list"></div>
+        </section>
+
+        <section class="dashboard-card support-card span-two" aria-labelledby="support-heading">
+          <div class="card-heading">
+            <div>
+              <p class="eyebrow">Teacher only</p>
+              <h2 id="support-heading">Student supports</h2>
+            </div>
+          </div>
+          <form id="support-form" class="support-form">
+            <label class="support-field">
+              <span>Student</span>
+              <select id="support-student" name="studentId"></select>
+            </label>
+            <label class="support-field">
+              <span>Bathroom check-in</span>
+              <span class="number-field">
+                <input id="support-bathroom-minutes" name="bathroomMinutes" type="number" min="5" max="60" step="1" required>
+                <i>minutes</i>
+              </span>
+            </label>
+            <label class="support-field">
+              <span>Daily destination</span>
+              <select id="support-destination" name="scheduledDestination">
+                <option value="">No reminder</option>
+                <option value="nurse">Nurse</option>
+                <option value="office">Office</option>
+                <option value="other">Other classroom</option>
+              </select>
+            </label>
+            <label class="support-field">
+              <span>Reminder time</span>
+              <input id="support-time" name="scheduledTime" type="time">
+            </label>
+            <button class="button primary support-save" type="submit">Save support</button>
+            <p id="support-form-error" class="form-error" hidden></p>
+          </form>
+          <p class="support-note">Personalized settings stay in this browser session and reset when the page refreshes.</p>
+          <div id="support-list" class="support-list"></div>
+        </section>
+
+        <section class="dashboard-card avatar-editor-card span-two" aria-labelledby="avatar-editor-heading">
+          <div class="card-heading">
+            <div>
+              <p class="eyebrow">Teacher only</p>
+              <h2 id="avatar-editor-heading">Avatar editor</h2>
+            </div>
+          </div>
+          <div class="avatar-editor-layout">
+            <div id="avatar-preview" class="avatar-preview" aria-live="polite"></div>
+            <form id="avatar-editor-form" class="avatar-editor-form">
+              <label class="support-field">
+                <span>Student</span>
+                <select id="avatar-student" name="studentId"></select>
+              </label>
+              <label class="support-field">
+                <span>Display name</span>
+                <input id="avatar-name" name="studentName" type="text" maxlength="14" required>
+              </label>
+              <label class="support-field">
+                <span>Animal</span>
+                <select id="avatar-animal" name="animal"></select>
+              </label>
+              <label class="support-field">
+                <span>Accessory</span>
+                <select id="avatar-accessory" name="accessory"></select>
+              </label>
+              <button class="button primary avatar-save" type="submit">Save avatar</button>
+              <p id="avatar-form-error" class="form-error" hidden></p>
+            </form>
+          </div>
+          <p class="support-note">Avatar changes are visible throughout this session and reset when the page refreshes.</p>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div id="student-dialog" class="dialog-shell" hidden>
+    <div class="dialog-backdrop" data-close-dialog></div>
+    <section class="student-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-description">
+      <button class="dialog-close" type="button" data-close-dialog aria-label="Close dialog">×</button>
+      <div id="dialog-content"></div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
