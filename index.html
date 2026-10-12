@@ -118,6 +118,35 @@
           <div id="trip-history" class="dashboard-list"></div>
         </section>
 
+        <section class="dashboard-card destination-manager-card span-two" aria-labelledby="destination-heading">
+          <div class="card-heading">
+            <div>
+              <p class="eyebrow">Teacher only</p>
+              <h2 id="destination-heading">Destinations</h2>
+            </div>
+          </div>
+          <div class="destination-manager-layout">
+            <div id="destination-list" class="destination-list"></div>
+            <form id="destination-form" class="destination-form" novalidate>
+              <h3 id="destination-form-title">Add a destination</h3>
+              <label class="support-field">
+                <span>Destination name</span>
+                <input id="destination-name" name="destinationName" type="text" maxlength="24" placeholder="Library" required>
+              </label>
+              <label class="support-field">
+                <span>Icon</span>
+                <select id="destination-icon" name="destinationIcon"></select>
+              </label>
+              <p id="destination-form-error" class="form-error" hidden></p>
+              <div class="destination-form-actions">
+                <button id="destination-cancel" class="button secondary" type="button" hidden>Cancel</button>
+                <button id="destination-save" class="button primary" type="submit">Add destination</button>
+              </div>
+            </form>
+          </div>
+          <p class="support-note">Add a photo of any destination entrance to help students recognize it. Photos stay in this browser session and reset on refresh. Bathroom passes stay fixed; other destinations can be renamed.</p>
+        </section>
+
         <section class="dashboard-card support-card span-two" aria-labelledby="support-heading">
           <div class="card-heading">
             <div>

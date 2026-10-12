@@ -130,6 +130,8 @@ h2 { margin-bottom: 0; font-size: clamp(1.3rem, 2vw, 1.8rem); letter-spacing: -.
 .bathroom-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .bathroom-chip { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 13px 15px; border: 1px solid var(--line); background: white; border-radius: 15px; }
 .bathroom-chip-icon { display: grid; width: 37px; height: 37px; place-items: center; background: var(--blue-soft); border-radius: 11px; font-size: 1.2rem; }
+.destination-visual { overflow: hidden; }
+.destination-visual img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .bathroom-chip strong, .bathroom-chip small { display: block; }
 .bathroom-chip small { margin-top: 2px; color: var(--muted); }
 .bathroom-chip-state { padding: 6px 9px; border-radius: 999px; background: var(--green-soft); color: var(--green-dark); font-size: .7rem; font-weight: 900; text-transform: uppercase; }
@@ -267,6 +269,28 @@ body.selection-active main { padding-bottom: 120px; }
 .reminder-icon { display: grid; width: 40px; height: 40px; flex: 0 0 auto; place-items: center; background: var(--gold-soft); border-radius: 12px; font-size: 1.25rem; }
 .reminder-row strong, .reminder-row small { display: block; }
 .reminder-row small { margin-top: 2px; color: var(--muted); }
+.destination-manager-card .card-heading { margin-bottom: 14px; }
+.destination-manager-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr); align-items: start; gap: 18px; }
+.destination-list { display: grid; gap: 16px; }
+.destination-group { display: grid; gap: 8px; }
+.destination-items { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.destination-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; min-width: 0; padding: 10px 11px; border: 1px solid #dfe6e1; background: #f8fbf9; border-radius: 13px; }
+.destination-item.is-fixed { background: #f4f2ec; }
+.destination-item-icon { display: grid; width: 38px; height: 38px; place-items: center; background: white; border-radius: 11px; font-size: 1.25rem; }
+.destination-item strong, .destination-item small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.destination-item small { margin-top: 2px; color: var(--muted); font-size: .72rem; }
+.destination-lock { padding: 5px 8px; color: var(--muted); background: #e8e5dd; border-radius: 999px; font-size: .67rem; font-weight: 900; text-transform: uppercase; }
+.destination-item-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+.destination-item-actions button, .destination-photo-action > span { display: inline-grid; min-height: 30px; place-items: center; border: 0; padding: 7px 9px; color: var(--green-dark); background: var(--green-soft); border-radius: 8px; cursor: pointer; font-size: .72rem; font-weight: 800; line-height: 1; }
+.destination-item-actions button[data-remove-destination] { color: var(--red); background: var(--red-soft); }
+.destination-photo-action { position: relative; display: inline-flex; }
+.destination-photo-action input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
+.destination-photo-action input:focus-visible + span { outline: 4px solid rgba(46, 95, 141, .28); outline-offset: 2px; }
+.destination-item-actions button[data-remove-destination-photo] { color: var(--blue); background: var(--blue-soft); }
+.destination-form { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line); background: white; border-radius: 15px; }
+.destination-form h3 { margin: 0; font-size: 1.05rem; }
+.destination-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.destination-form-actions .button { min-height: 44px; }
 .support-card .card-heading { margin-bottom: 14px; }
 .support-form { display: grid; grid-template-columns: 1.1fr 1fr 1.1fr .85fr auto; align-items: end; gap: 10px; }
 .support-field { display: grid; gap: 7px; min-width: 0; }
@@ -337,6 +361,9 @@ body.selection-active main { padding-bottom: 120px; }
 .option-card input { position: absolute; opacity: 0; pointer-events: none; }
 .option-card span { display: flex; min-height: 68px; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 9px; border: 2px solid var(--line); background: white; border-radius: 13px; cursor: pointer; font-size: .78rem; font-weight: 800; text-align: center; }
 .option-card span b { font-size: 1.25rem; }
+.option-card .destination-choice-visual { display: grid; width: 38px; height: 30px; place-items: center; overflow: hidden; border-radius: 8px; }
+.option-card .destination-choice-visual.has-photo { width: 52px; height: 36px; background: #e8e5dd; }
+.option-card .destination-choice-visual img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .option-card input:checked + span { border-color: var(--green); background: var(--green-soft); color: var(--green-dark); }
 .option-card input:focus-visible + span { outline: 4px solid rgba(46, 95, 141, .28); outline-offset: 2px; }
 .field-group select { width: 100%; min-height: 48px; padding: 0 12px; border: 2px solid var(--line); background: white; border-radius: 12px; }
@@ -366,6 +393,8 @@ body.dialog-open { overflow: hidden; }
   .teacher-hero { flex-direction: column; }
   .buddy-control { width: 100%; }
   .support-form { grid-template-columns: 1fr 1fr; }
+  .destination-manager-layout { grid-template-columns: 1fr; }
+  .destination-items { grid-template-columns: 1fr; }
   .avatar-editor-form { grid-template-columns: 1fr 1fr; }
   .support-save { width: 100%; }
   .avatar-save { width: 100%; }
@@ -412,6 +441,8 @@ body.dialog-open { overflow: hidden; }
   .selection-tray { width: calc(100% - 20px); bottom: max(10px, env(safe-area-inset-bottom)); }
   .selection-actions { flex-direction: row; }
   .support-form { grid-template-columns: 1fr; }
+  .destination-items { grid-template-columns: 1fr; }
+  .destination-form-actions { flex-direction: column-reverse; }
   .avatar-editor-layout { grid-template-columns: 1fr; }
   .avatar-editor-form { grid-template-columns: 1fr; }
   #active-trips .list-row { align-items: stretch; flex-direction: column; }

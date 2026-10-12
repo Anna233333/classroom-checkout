@@ -51,10 +51,11 @@
 
   const destinations = {
     ...bathroomInfo,
-    nurse: { label: "Nurse", shortLabel: "Nurse", icon: "🩹" },
-    office: { label: "Office", shortLabel: "Office", icon: "🏫" },
-    other: { label: "Other classroom", shortLabel: "Other", icon: "🚪" }
+    nurse: { label: "Nurse", shortLabel: "Nurse", icon: "🩹", editable: true },
+    office: { label: "Office", shortLabel: "Office", icon: "🏫", editable: true },
+    other: { label: "Other classroom", shortLabel: "Other classroom", icon: "🚪", editable: true }
   };
+  const destinationIconChoices = ["🩹", "🏫", "🚪", "📚", "🎨", "🎵", "🏃", "💬", "🧑‍🏫", "⭐"];
 
   const buddyModeCopy = {
     OPTIONAL: {
@@ -81,6 +82,8 @@
     history: [],
     studentSupports: {},
     nextRequestId: 101,
+    nextDestinationId: 1,
+    editingDestinationId: null,
     passes: {
       boys: { status: "AVAILABLE", currentRequestId: null },
       girls: { status: "AVAILABLE", currentRequestId: null },
@@ -115,6 +118,14 @@
     supportTime: document.querySelector("#support-time"),
     supportFormError: document.querySelector("#support-form-error"),
     supportList: document.querySelector("#support-list"),
+    destinationForm: document.querySelector("#destination-form"),
+    destinationName: document.querySelector("#destination-name"),
+    destinationIcon: document.querySelector("#destination-icon"),
+    destinationFormTitle: document.querySelector("#destination-form-title"),
+    destinationSave: document.querySelector("#destination-save"),
+    destinationCancel: document.querySelector("#destination-cancel"),
+    destinationFormError: document.querySelector("#destination-form-error"),
+    destinationList: document.querySelector("#destination-list"),
     avatarEditorForm: document.querySelector("#avatar-editor-form"),
     avatarStudent: document.querySelector("#avatar-student"),
     avatarName: document.querySelector("#avatar-name"),
@@ -238,6 +249,28 @@
     }, 3600);
   }
 
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"]/g, (character) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;"
+    })[character]);
+  }
+
+  function destinationVisualMarkup(destination, className) {
+    const visual = destination.image
+      ? `<img src="${destination.image}" alt="">`
+      : destination.icon;
+    return `<span class="destination-visual ${className}" aria-hidden="true">${visual}</span>`;
+  }
+
+  function destinationChoiceVisualMarkup(destination) {
+    return destination.image
+      ? `<b class="destination-choice-visual has-photo" aria-hidden="true"><img src="${destination.image}" alt=""></b>`
+      : `<b class="destination-choice-visual" aria-hidden="true">${destination.icon}</b>`;
+  }
+
   function renderAll() {
     renderStudentHeader();
     renderBathroomChips();
@@ -261,7 +294,7 @@
       const stateClass = pass.status === "IN_USE" ? "in-use" : pass.status === "OFFERED" ? "offered" : "";
       return `
         <article class="bathroom-chip">
-          <span class="bathroom-chip-icon" aria-hidden="true">${info.icon}</span>
+          ${destinationVisualMarkup(info, "bathroom-chip-icon")}
           <span><strong>${info.shortLabel}</strong><small>${waitingCount} waiting</small></span>
           <span class="bathroom-chip-state ${stateClass}">${stateText}</span>
         </article>`;
@@ -317,7 +350,188 @@
 
   function initializeSupportForm() {
     els.supportStudent.innerHTML = studentOptionsMarkup();
+    refreshSupportDestinationOptions();
     populateSupportForm();
+  }
+
+  function nonBathroomDestinationEntries() {
+    return Object.entries(destinations).filter(([key]) => !isBathroom(key));
+  }
+
+  function initializeDestinationManager() {
+    els.destinationIcon.innerHTML = destinationIconChoices.map((icon) => `<option value="${icon}">${icon}</option>`).join("");
+    resetDestinationForm();
+    renderDestinationManager();
+  }
+
+  function refreshSupportDestinationOptions(selectedValue = els.supportDestination.value) {
+    els.supportDestination.innerHTML = `<option value="">No reminder</option>${nonBathroomDestinationEntries().map(([key, info]) =>
+      `<option value="${key}">${info.icon} ${escapeHtml(info.label)}</option>`
+    ).join("")}`;
+    els.supportDestination.value = destinations[selectedValue] && !isBathroom(selectedValue) ? selectedValue : "";
+  }
+
+  function resetDestinationForm() {
+    state.editingDestinationId = null;
+    els.destinationForm.reset();
+    els.destinationIcon.value = destinationIconChoices[0];
+    els.destinationFormTitle.textContent = "Add a destination";
+    els.destinationSave.textContent = "Add destination";
+    els.destinationCancel.hidden = true;
+    els.destinationFormError.hidden = true;
+  }
+
+  function editDestination(destinationId) {
+    const destination = destinations[destinationId];
+    if (!destination || isBathroom(destinationId)) return;
+    state.editingDestinationId = destinationId;
+    els.destinationName.value = destination.label;
+    els.destinationIcon.value = destination.icon;
+    els.destinationFormTitle.textContent = "Edit destination";
+    els.destinationSave.textContent = "Save changes";
+    els.destinationCancel.hidden = false;
+    els.destinationFormError.hidden = true;
+    els.destinationForm.scrollIntoView({ behavior: "smooth", block: "center" });
+    els.destinationName.focus();
+  }
+
+  function destinationIsInUse(destinationId) {
+    return state.requests.some((request) => request.destination === destinationId && request.status !== "RETURNED") ||
+      state.history.some((trip) => trip.destination === destinationId) ||
+      Object.values(state.studentSupports).some((support) => support.scheduledDestination === destinationId);
+  }
+
+  function saveDestination(form) {
+    const data = new FormData(form);
+    const label = data.get("destinationName").trim();
+    const icon = data.get("destinationIcon");
+    const validLabel = /^[\p{L}\p{N}][\p{L}\p{N} &'’().\/-]{0,23}$/u.test(label);
+    const duplicate = nonBathroomDestinationEntries().some(([key, destination]) =>
+      key !== state.editingDestinationId && destination.label.toLocaleLowerCase() === label.toLocaleLowerCase()
+    );
+
+    if (!validLabel) {
+      els.destinationFormError.textContent = "Use 1–24 letters, numbers, spaces, or simple punctuation.";
+      els.destinationFormError.hidden = false;
+      return;
+    }
+    if (!destinationIconChoices.includes(icon)) {
+      els.destinationFormError.textContent = "Choose an icon for this destination.";
+      els.destinationFormError.hidden = false;
+      return;
+    }
+    if (duplicate) {
+      els.destinationFormError.textContent = "That destination is already in the list.";
+      els.destinationFormError.hidden = false;
+      return;
+    }
+    if (!state.editingDestinationId && nonBathroomDestinationEntries().length >= 12) {
+      els.destinationFormError.textContent = "You can have up to 12 non-bathroom destinations.";
+      els.destinationFormError.hidden = false;
+      return;
+    }
+
+    const destinationId = state.editingDestinationId || `custom-${state.nextDestinationId++}`;
+    const existing = destinations[destinationId];
+    destinations[destinationId] = {
+      label,
+      shortLabel: label,
+      icon,
+      image: existing?.image || "",
+      editable: true,
+      custom: existing?.custom || !existing
+    };
+    refreshSupportDestinationOptions();
+    resetDestinationForm();
+    renderAll();
+    if (!els.dialogShell.hidden && state.dialogStudentId && !activeRequestForStudent(state.dialogStudentId)) renderOpenDialog();
+    showToast(`${label} ${existing ? "updated" : "added"}.`);
+  }
+
+  function removeDestination(destinationId) {
+    const destination = destinations[destinationId];
+    if (!destination?.custom || isBathroom(destinationId)) return;
+    if (destinationIsInUse(destinationId)) {
+      showToast(`${destination.label} is connected to a trip or student support and can’t be removed yet.`, "notice");
+      return;
+    }
+    delete destinations[destinationId];
+    if (state.editingDestinationId === destinationId) resetDestinationForm();
+    refreshSupportDestinationOptions();
+    renderAll();
+    showToast(`${destination.label} removed.`, "notice");
+  }
+
+  function destinationPhotoControlsMarkup(destinationId, destination) {
+    return `
+      <label class="destination-photo-action">
+        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" data-destination-photo="${destinationId}">
+        <span>${destination.image ? "Change photo" : "Add photo"}</span>
+      </label>
+      ${destination.image ? `<button type="button" data-remove-destination-photo="${destinationId}">Use icon</button>` : ""}`;
+  }
+
+  function updateDestinationPhoto(destinationId, file) {
+    const destination = destinations[destinationId];
+    if (!destination || !file) return;
+    const allowedImageTypes = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+    if (!allowedImageTypes.has(file.type)) {
+      showToast("Choose a PNG, JPEG, WebP, or GIF image.", "notice");
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      showToast("Choose an image smaller than 3 MB.", "notice");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      if (typeof reader.result !== "string" || !reader.result.startsWith("data:image/")) {
+        showToast("That image could not be read.", "notice");
+        return;
+      }
+      destination.image = reader.result;
+      renderAll();
+      if (!els.dialogShell.hidden && state.dialogStudentId && !activeRequestForStudent(state.dialogStudentId)) renderOpenDialog();
+      showToast(`Photo added for ${destination.label}.`);
+    });
+    reader.addEventListener("error", () => showToast("That image could not be read.", "notice"));
+    reader.readAsDataURL(file);
+  }
+
+  function removeDestinationPhoto(destinationId) {
+    const destination = destinations[destinationId];
+    if (!destination?.image) return;
+    destination.image = "";
+    renderAll();
+    if (!els.dialogShell.hidden && state.dialogStudentId && !activeRequestForStudent(state.dialogStudentId)) renderOpenDialog();
+    showToast(`${destination.label} is using its icon again.`, "notice");
+  }
+
+  function renderDestinationManager() {
+    els.destinationList.innerHTML = `
+      <div class="destination-group">
+        <p class="field-label">Bathroom passes · fixed</p>
+        <div class="destination-items">${Object.entries(bathroomInfo).map(([key, destination]) => `
+          <article class="destination-item is-fixed">
+            ${destinationVisualMarkup(destination, "destination-item-icon")}
+            <span><strong>${escapeHtml(destination.label)}</strong><small>Pass and queue enabled</small></span>
+            <span class="destination-item-actions">${destinationPhotoControlsMarkup(key, destination)}<span class="destination-lock">Fixed</span></span>
+          </article>`).join("")}</div>
+      </div>
+      <div class="destination-group">
+        <p class="field-label">Other destinations</p>
+        <div class="destination-items">${nonBathroomDestinationEntries().map(([key, destination]) => `
+          <article class="destination-item">
+            ${destinationVisualMarkup(destination, "destination-item-icon")}
+            <span><strong>${escapeHtml(destination.label)}</strong><small>${destination.custom ? "Custom destination" : "Included destination"}</small></span>
+            <span class="destination-item-actions">
+              ${destinationPhotoControlsMarkup(key, destination)}
+              <button type="button" data-edit-destination="${key}">Edit</button>
+              ${destination.custom ? `<button type="button" data-remove-destination="${key}">Remove</button>` : ""}
+            </span>
+          </article>`).join("")}</div>
+      </div>`;
   }
 
   function studentOptionsMarkup() {
@@ -377,7 +591,7 @@
     els.supportList.innerHTML = entries.length ? entries.map(([studentId, support]) => {
       const student = studentById(studentId);
       const scheduleText = support.scheduledDestination
-        ? `${destinations[support.scheduledDestination].shortLabel} daily at ${timeLabel(scheduledDateForToday(support.scheduledTime))}`
+        ? `${escapeHtml(destinations[support.scheduledDestination].shortLabel)} daily at ${timeLabel(scheduledDateForToday(support.scheduledTime))}`
         : "No daily destination reminder";
       return `
         <article class="support-item">
@@ -466,13 +680,14 @@
 
     renderTeacherReminders(activeRequests);
     renderSupportList();
+    renderDestinationManager();
 
     els.activeCount.textContent = studentCountOut;
     els.activeTrips.innerHTML = activeRequests.length ? activeRequests.map((request) => `
       <article class="list-row">
         <div class="list-row-main">
           <span class="list-row-avatar" aria-hidden="true">${avatarsForRequest(request)}</span>
-          <span><strong>${namesForRequest(request)}</strong><small>${destinations[request.destination].label} · Floor ${request.floor}</small></span>
+          <span><strong>${namesForRequest(request)}</strong><small>${escapeHtml(destinations[request.destination].label)} · Floor ${request.floor}</small></span>
         </div>
         <div class="active-trip-actions">
           <small>Left ${timeLabel(request.departedAt)}</small>
@@ -501,7 +716,7 @@
       <article class="list-row">
         <div class="list-row-main">
           <span class="list-row-avatar" aria-hidden="true">${trip.avatars}</span>
-          <span><strong>${trip.names}</strong><small>${destinations[trip.destination].shortLabel} · Floor ${trip.floor}</small></span>
+          <span><strong>${trip.names}</strong><small>${escapeHtml(destinations[trip.destination].shortLabel)} · Floor ${trip.floor}</small></span>
         </div>
         <span class="history-timing">
           <small><b>Left</b> ${timeLabel(trip.departedAt)}</small>
@@ -551,7 +766,7 @@
       return [{
         icon: destinations[schedule.scheduledDestination].icon,
         names: student.name,
-        detail: `${destinations[schedule.scheduledDestination].label} scheduled for ${timeLabel(schedule.scheduledAt)} · awaiting sign-out`
+        detail: `${escapeHtml(destinations[schedule.scheduledDestination].label)} scheduled for ${timeLabel(schedule.scheduledAt)} · awaiting sign-out`
       }];
     });
 
@@ -609,7 +824,7 @@
     const preferredDestination = dueSchedule?.scheduledDestination || Object.keys(destinations)[0];
     return `
       ${dialogPerson(student, buddy ? "You’re checking out together. Choose where you’re going." : "Choose where you’re going. We’ll check the pass for you.", buddy)}
-      ${dueSchedule ? `<p class="scheduled-support">${destinations[dueSchedule.scheduledDestination].icon} Scheduled ${destinations[dueSchedule.scheduledDestination].label} visit at ${timeLabel(dueSchedule.scheduledAt)}. It’s selected below.</p>` : ""}
+      ${dueSchedule ? `<p class="scheduled-support">${destinations[dueSchedule.scheduledDestination].icon} Scheduled ${escapeHtml(destinations[dueSchedule.scheduledDestination].label)} visit at ${timeLabel(dueSchedule.scheduledAt)}. It’s selected below.</p>` : ""}
       <form id="trip-request-form" class="trip-form" novalidate>
         <fieldset class="field-group" style="border:0;padding:0;margin:0">
           <legend class="field-label">Destination</legend>
@@ -617,7 +832,7 @@
             ${Object.entries(destinations).map(([key, info]) => `
               <label class="option-card">
                 <input type="radio" name="destination" value="${key}" ${key === preferredDestination ? "checked" : ""}>
-                <span><b aria-hidden="true">${info.icon}</b>${info.shortLabel}</span>
+                <span>${destinationChoiceVisualMarkup(info)}${escapeHtml(info.shortLabel)}</span>
               </label>`).join("")}
           </div>
         </fieldset>
@@ -639,7 +854,7 @@
   function statusDialog(student, request) {
     const destination = destinations[request.destination];
     const partner = request.buddyId ? studentById(request.buddyId === student.id ? request.studentId : request.buddyId) : null;
-    const sharedDetails = `${destination.label} · Floor ${request.floor}${partner ? ` · With ${partner.name}` : ""}`;
+    const sharedDetails = `${escapeHtml(destination.label)} · Floor ${request.floor}${partner ? ` · With ${partner.name}` : ""}`;
 
     if (request.status === "OUT") {
       return `
@@ -767,6 +982,7 @@
 
   function createRequest(studentId, destination, floor, buddyId) {
     if (!isStudentAvailable(studentId)) return { error: "You already have an active request." };
+    if (!destinations[destination]) return { error: "Please choose an available destination." };
     let normalizedBuddyId = buddyId ? Number(buddyId) : null;
     if (state.buddyMode === "SOLO") normalizedBuddyId = null;
     if (state.buddyMode === "REQUIRED" && !normalizedBuddyId) return { error: "Please choose an available buddy." };
@@ -963,6 +1179,18 @@
       showToast(`Personalized supports removed for ${studentById(studentId).name}.`, "notice");
     }
 
+    const editDestinationButton = event.target.closest("[data-edit-destination]");
+    if (editDestinationButton) editDestination(editDestinationButton.dataset.editDestination);
+
+    const removeDestinationButton = event.target.closest("[data-remove-destination]");
+    if (removeDestinationButton) removeDestination(removeDestinationButton.dataset.removeDestination);
+
+    const removeDestinationPhotoButton = event.target.closest("[data-remove-destination-photo]");
+    if (removeDestinationPhotoButton) removeDestinationPhoto(removeDestinationPhotoButton.dataset.removeDestinationPhoto);
+
+    const cancelDestinationButton = event.target.closest("#destination-cancel");
+    if (cancelDestinationButton) resetDestinationForm();
+
     const closeButton = event.target.closest("[data-close-dialog]");
     if (closeButton) closeDialog();
 
@@ -983,7 +1211,10 @@
   });
 
   document.addEventListener("submit", (event) => {
-    if (event.target.matches("#support-form")) {
+    if (event.target.matches("#destination-form")) {
+      event.preventDefault();
+      saveDestination(event.target);
+    } else if (event.target.matches("#support-form")) {
       event.preventDefault();
       saveStudentSupport(event.target);
     } else if (event.target.matches("#avatar-editor-form")) {
@@ -993,6 +1224,11 @@
       event.preventDefault();
       submitRequest(event.target);
     }
+  });
+
+  document.addEventListener("change", (event) => {
+    const photoInput = event.target.closest("[data-destination-photo]");
+    if (photoInput) updateDestinationPhoto(photoInput.dataset.destinationPhoto, photoInput.files?.[0]);
   });
 
   document.addEventListener("keydown", (event) => {
@@ -1028,6 +1264,7 @@
   }, 30000);
 
   initializeSupportForm();
+  initializeDestinationManager();
   initializeAvatarEditor();
   renderAll();
 })();

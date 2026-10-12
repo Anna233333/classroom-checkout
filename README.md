@@ -18,6 +18,7 @@ Then open `http://127.0.0.1:4173/`.
 - In Optional Buddy mode, the first avatar selects the student. A second avatar selects a buddy and opens the trip dialog, while **Continue Solo** opens it for one student.
 - In Buddy Required mode, students tap two available animal avatars before the trip dialog opens. Solo Only keeps the one-tap flow.
 - The trip dialog contains destination and floor choices without a scrolling buddy menu. **Change students** returns to the roster chooser.
+- Teacher-created destinations appear in the trip dialog alongside the built-in choices.
 - Students with an active request reopen the dialog to see their queue position, accept an offered pass, choose Not Ready or Ready Now, or mark themselves back.
 - Three compact bathroom chips show whether each pass is available, offered, or in use and show its queue count.
 - Buddy pairs share one request, queue position, pass, departure, and return.
@@ -31,6 +32,8 @@ The private **Check-in reminders** panel appears when a bathroom trip exceeds th
 The teacher-only **Student Supports** area can replace the 10-minute bathroom check-in time for an individual student and add one daily Nurse, Office, or Other Classroom reminder. A scheduled reminder appears from 10 minutes before through 30 minutes after its time until the student signs out, and the student’s checkout dialog preselects the scheduled destination. Supports remain in memory for the current browser session and reset on refresh.
 
 The teacher-only **Avatar Editor** uses the classroom’s existing animal icons. Teachers can change a student’s display name, animal or creature, and one optional accessory. Names must be unique and 1–14 characters. Customizations update throughout the roster and dashboard and reset on refresh; background colors are not customized.
+
+The teacher-only **Destinations** area keeps the three bathroom pass types fixed while allowing teachers to rename Nurse, Office, and Other Classroom or add custom locations with an icon. Teachers can add a PNG, JPEG, WebP, or GIF photo under 3 MB to any destination; the photo replaces its emoji in bathroom status cards and student destination choices. Unused custom destinations can be removed. Destination names, icons, and photos also update the Student Supports reminder menu and reset on refresh.
 
 - **Optional Buddy** is the default. Students may go alone or choose one available buddy.
 - **Buddy Required** blocks a new request until an available buddy is selected.
